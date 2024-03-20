@@ -1,5 +1,6 @@
 package org.msgpack.jruby;
 
+import java.nio.BufferUnderflowException;
 import java.util.Arrays;
 
 import org.jruby.Ruby;
@@ -164,10 +165,8 @@ public class Unpacker extends RubyObject {
     try {
       data = null;
       data = decoder.next();
-    } catch (RaiseException re) {
-      if (re.getException().getType() != underflowErrorClass) {
-        throw re;
-      }
+    } catch (BufferUnderflowException bue) {
+      // noop
     }
     return ctx.runtime.newFixnum(decoder.offset());
   }
@@ -199,7 +198,11 @@ public class Unpacker extends RubyObject {
 
   @JRubyMethod(name = "full_unpack")
   public IRubyObject fullUnpack(ThreadContext ctx) {
-    return decoder.next();
+    try {
+      return decoder.next();
+    } catch (BufferUnderflowException bue) {
+      throw ctx.runtime.newRaiseException(underflowErrorClass, "Not enough bytes available");
+    }
   }
 
   @JRubyMethod(name = "feed_each", required = 1)
@@ -221,10 +224,8 @@ public class Unpacker extends RubyObject {
           while (decoder.hasNext()) {
             block.yield(ctx, decoder.next());
           }
-        } catch (RaiseException re) {
-          if (re.getException().getType() != underflowErrorClass) {
-            throw re;
-          }
+        } catch (BufferUnderflowException bue) {
+          // noop
         }
       }
       return this;
@@ -253,12 +254,8 @@ public class Unpacker extends RubyObject {
     }
     try {
       return decoder.next();
-    } catch (RaiseException re) {
-      if (re.getException().getType() != underflowErrorClass) {
-        throw re;
-      } else {
-        throw ctx.runtime.newEOFError();
-      }
+    } catch (BufferUnderflowException bue) {
+      throw ctx.runtime.newEOFError();
     }
   }
 
@@ -277,12 +274,8 @@ public class Unpacker extends RubyObject {
     if (decoder != null) {
       try {
         return decoder.read_array_header();
-      } catch (RaiseException re) {
-        if (re.getException().getType() != underflowErrorClass) {
-          throw re;
-        } else {
-          throw ctx.runtime.newEOFError();
-        }
+      } catch (BufferUnderflowException bue) {
+        throw ctx.runtime.newEOFError();
       }
     }
     return ctx.runtime.getNil();
@@ -293,12 +286,8 @@ public class Unpacker extends RubyObject {
     if (decoder != null) {
       try {
         return decoder.read_map_header();
-      } catch (RaiseException re) {
-        if (re.getException().getType() != underflowErrorClass) {
-          throw re;
-        } else {
-          throw ctx.runtime.newEOFError();
-        }
+      } catch (BufferUnderflowException bue) {
+        throw ctx.runtime.newEOFError();
       }
     }
     return ctx.runtime.getNil();

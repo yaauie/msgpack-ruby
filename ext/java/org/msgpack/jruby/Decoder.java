@@ -215,12 +215,9 @@ public class Decoder implements Iterator<IRubyObject> {
         return runtime.newFixnum(buffer.getInt());
       }
       throw runtime.newRaiseException(unexpectedTypeErrorClass, "unexpected type");
-    } catch (RaiseException re) {
+    } catch (RaiseException | BufferUnderflowException re) {
       buffer.position(position);
       throw re;
-    } catch (BufferUnderflowException bue) {
-      buffer.position(position);
-      throw runtime.newRaiseException(underflowErrorClass, "Not enough bytes available");
     }
   }
 
@@ -236,12 +233,9 @@ public class Decoder implements Iterator<IRubyObject> {
         return runtime.newFixnum(buffer.getInt());
       }
       throw runtime.newRaiseException(unexpectedTypeErrorClass, "unexpected type");
-    } catch (RaiseException re) {
+    } catch (RaiseException | BufferUnderflowException re) {
       buffer.position(position);
       throw re;
-    } catch (BufferUnderflowException bue) {
-      buffer.position(position);
-      throw runtime.newRaiseException(underflowErrorClass, "Not enough bytes available");
     }
   }
 
@@ -308,12 +302,9 @@ public class Decoder implements Iterator<IRubyObject> {
       }
       buffer.position(position);
       throw runtime.newRaiseException(malformedFormatErrorClass, "Illegal byte sequence");
-    } catch (RaiseException re) {
+    } catch (RaiseException | BufferUnderflowException re) {
       buffer.position(position);
       throw re;
-    } catch (BufferUnderflowException bue) {
-      buffer.position(position);
-      throw runtime.newRaiseException(underflowErrorClass, "Not enough bytes available");
     }
   }
 }
