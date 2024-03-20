@@ -38,9 +38,12 @@ public class Decoder implements Iterator<IRubyObject> {
 
   private Unpacker unpacker;
   private ByteBuffer buffer;
+  private ByteBuffer spareBuffer;
   private boolean symbolizeKeys;
   private boolean freeze;
   private boolean allowUnknownExt;
+
+  private static final int MAX_BUFFER_CAPACITY = 16 * 1024 * 1024;
 
   public Decoder(Ruby runtime) {
     this(runtime, null, new byte[] {}, 0, 0, false, false, false);
@@ -93,10 +96,19 @@ public class Decoder implements Iterator<IRubyObject> {
     if (buffer == null) {
       buffer = ByteBuffer.wrap(bytes, offset, length);
     } else {
-      ByteBuffer newBuffer = ByteBuffer.allocate(buffer.remaining() + length);
+      int requiredCapacity = Math.addExact(buffer.remaining(), length);
+      if (spareBuffer == null || spareBuffer.capacity() < requiredCapacity) {
+        if (requiredCapacity > MAX_BUFFER_CAPACITY) {
+          throw new RuntimeException("Oh no.");
+        }
+        spareBuffer = ByteBuffer.allocate(requiredCapacity);
+      }
+      ByteBuffer newBuffer = (ByteBuffer) spareBuffer.clear();
       newBuffer.put(buffer);
       newBuffer.put(bytes, offset, length);
       newBuffer.flip();
+
+      spareBuffer = buffer;
       buffer = newBuffer;
     }
   }
